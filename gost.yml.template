@@ -1,0 +1,19 @@
+services:
+  - name: socks5-tls
+    addr: ":${GOST_PORT}"
+    handler:
+      type: socks5
+      auth:
+        username: ${GOST_USER}
+        password: ${GOST_PASSWORD}
+      metadata:
+        notls: true
+        udp: true
+    listener:
+      type: tls
+      tls:
+        certFile: /certs/fullchain.pem
+        keyFile: /certs/privkey.pem
+        options:
+          minVersion: VersionTLS12
+          maxVersion: VersionTLS13

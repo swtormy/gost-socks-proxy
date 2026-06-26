@@ -1,0 +1,8 @@
+.env
+gost.yml
+credentials.txt
+certs/*
+!certs/.gitkeep
+
+# lego account data stays on server, not in repo
+.lego/

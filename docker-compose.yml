@@ -1,0 +1,11 @@
+services:
+  gost-socks5:
+    image: gogost/gost:latest
+    container_name: gost-socks5
+    restart: unless-stopped
+    ports:
+      - "${GOST_PORT:-1443}:${GOST_PORT:-1443}"
+    volumes:
+      - ./certs:/certs:ro
+      - ./gost.yml:/etc/gost/gost.yml:ro
+    command: ["-C", "/etc/gost/gost.yml"]
