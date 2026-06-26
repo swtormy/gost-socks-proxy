@@ -7,7 +7,7 @@ Docker-прокси **SOCKS5 с логином/паролем** и **TLS** (Let'
 ### 1. Скачать
 
 ```bash
-git clone https://github.com/YOUR_USER/gost-socks-proxy.git
+git clone https://github.com/swtormy/gost-socks-proxy.git
 cd gost-socks-proxy
 ```
 
