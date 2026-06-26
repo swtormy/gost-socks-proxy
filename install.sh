@@ -49,9 +49,20 @@ install_lego() {
     return 0
   fi
   echo "Installing lego ACME client..."
-  local version url
+  local version arch url
   version="$(curl -fsSL https://api.github.com/repos/go-acme/lego/releases/latest | grep -oP '"tag_name": "\K[^"]+' | head -1)"
-  url="https://github.com/go-acme/lego/releases/download/${version}/lego_${version#v}_linux_amd64.tar.gz"
+  case "$(uname -m)" in
+    x86_64) arch=amd64 ;;
+    aarch64|arm64) arch=arm64 ;;
+    i686|i386) arch=386 ;;
+    armv7l|armv7) arch=armv7 ;;
+    armv6l|armv6) arch=armv6 ;;
+    *)
+      echo "ERROR: Unsupported architecture: $(uname -m)" >&2
+      exit 1
+      ;;
+  esac
+  url="https://github.com/go-acme/lego/releases/download/${version}/lego_${version}_linux_${arch}.tar.gz"
   curl -fsSL "${url}" -o /tmp/lego.tar.gz
   tar -xzf /tmp/lego.tar.gz -C /tmp lego
   install -m 755 /tmp/lego /usr/local/bin/lego
