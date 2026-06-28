@@ -75,6 +75,74 @@ socks5+tls://USER:PASS@YOUR_IP:1443?notls=true
 
 Telegram напрямую к TLS-порту не подключается — нужен локальный клиент (sing-box / GOST), который поднимет SOCKS на `127.0.0.1:1080`.
 
+### Проверка на самом VPS
+
+```bash
+sudo ./scripts/test-proxy.sh
+# OK: proxy works, exit IP = YOUR_IP
+```
+
+---
+
+## Troubleshooting
+
+### В логах `tls: client offered only unsupported versions: [301]` / `[302]`
+
+**301 = TLS 1.0, 302 = TLS 1.1.** Сервер принимает только TLS 1.2+ — это нормально.
+
+IP вроде `66.132.195.55` — чаще всего **интернет-сканеры** (Censys и т.п.), не ваш клиент. Их можно игнорировать.
+
+### Интернет не работает после «подключения»
+
+**Самая частая причина:** клиент шлёт **обычный SOCKS5 без TLS** на порт `1443`, а сервер ждёт **сначала TLS-handshake**.
+
+| Неправильно | Правильно |
+|-------------|-----------|
+| Telegram → SOCKS5 → `IP:1443` | sing-box / GOST → **SOCKS5+TLS** → `IP:1443` → локальный SOCKS `127.0.0.1:1080` → Telegram |
+| `socks5://user:pass@IP:1443` | `socks5+tls://user:pass@IP:1443?notls=true` |
+| Shadowrocket: тип SOCKS5 | Shadowrocket: **SOCKS5 over TLS** |
+
+Порт `1443` — это **TLS-слой**, внутри него SOCKS5. Не путать с «SOCKS5 + шифрование в настройках Telegram».
+
+### Локальный GOST-клиент (универсальный вариант)
+
+На ПК/телефоне с Docker или бинарником GOST:
+
+```bash
+gost -L socks5://:1080 \
+  -F "socks5+tls://USER:PASS@SERVER_IP:1443?notls=true"
+```
+
+Дальше в Telegram/браузере указываете **`127.0.0.1:1080`** (обычный SOCKS5 без TLS).
+
+### sing-box: минимальный конфиг
+
+```json
+{
+  "outbounds": [{
+    "type": "socks",
+    "tag": "proxy",
+    "server": "SERVER_IP",
+    "server_port": 1443,
+    "username": "proxy",
+    "password": "YOUR_PASSWORD",
+    "version": "5",
+    "tls": { "enabled": true }
+  }],
+  "inbounds": [{
+    "type": "mixed",
+    "tag": "in",
+    "listen": "127.0.0.1",
+    "listen_port": 1080
+  }],
+  "route": { "final": "proxy" }
+}
+```
+
+### Shadowrocket / Surge / Loon
+
+Используйте схему **`socks5+tls://`** или тип **SOCKS5-TLS**, не обычный SOCKS5.
+
 ---
 
 ## Управление
