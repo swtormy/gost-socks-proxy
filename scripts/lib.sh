@@ -37,3 +37,74 @@ SYNC_SCRIPT="${ROOT_DIR}/scripts/sync-certs.sh"
 RENEW_SCRIPT="${ROOT_DIR}/scripts/renew-certs.sh"
 CRON_FILE="/etc/cron.d/gost-socks-proxy-renew"
 RENEW_LOG="/var/log/gost-socks-proxy-renew.log"
+
+HOP_SERVER_IP="${HOP_SERVER_IP:-}"
+HOP_GOST_PORT="${HOP_GOST_PORT:-1443}"
+HOP_GOST_USER="${HOP_GOST_USER:-}"
+HOP_GOST_PASSWORD="${HOP_GOST_PASSWORD:-}"
+CHAIN_MODE_FILE="${CHAIN_MODE_FILE:-${ROOT_DIR}/state/mode}"
+GOST_RELOAD_MODE="${GOST_RELOAD_MODE:-sighup}"
+CHAIN_NAME="${CHAIN_NAME:-chain-hop}"
+
+if [[ "${CHAIN_MODE_FILE}" != /* ]]; then
+  CHAIN_MODE_FILE="${ROOT_DIR}/${CHAIN_MODE_FILE}"
+fi
+
+ensure_mode_file() {
+  install -d -m 755 "$(dirname "${CHAIN_MODE_FILE}")"
+  if [[ ! -f "${CHAIN_MODE_FILE}" ]]; then
+    echo "direct" > "${CHAIN_MODE_FILE}"
+    chmod 644 "${CHAIN_MODE_FILE}"
+  fi
+}
+
+read_proxy_mode() {
+  ensure_mode_file
+
+  local mode
+  mode="$(tr -d '[:space:]' < "${CHAIN_MODE_FILE}")"
+  case "${mode}" in
+    direct|chain) echo "${mode}" ;;
+    *)
+      echo "direct" > "${CHAIN_MODE_FILE}"
+      echo "direct"
+      ;;
+  esac
+}
+
+set_proxy_mode() {
+  local mode="${1:-}"
+  if [[ "${mode}" != "direct" && "${mode}" != "chain" ]]; then
+    echo "ERROR: invalid mode '${mode}', expected direct|chain" >&2
+    return 1
+  fi
+  ensure_mode_file
+  echo "${mode}" > "${CHAIN_MODE_FILE}"
+}
+
+require_hop_env() {
+  if [[ -z "${HOP_SERVER_IP}" || -z "${HOP_GOST_USER}" || -z "${HOP_GOST_PASSWORD}" ]]; then
+    echo "ERROR: HOP_SERVER_IP, HOP_GOST_USER and HOP_GOST_PASSWORD must be set in .env" >&2
+    return 1
+  fi
+}
+
+reload_gost() {
+  if ! docker ps --format '{{.Names}}' | grep -qx "${GOST_CONTAINER}"; then
+    echo "ERROR: container ${GOST_CONTAINER} is not running" >&2
+    return 1
+  fi
+
+  case "${GOST_RELOAD_MODE}" in
+    sighup)
+      docker kill -s HUP "${GOST_CONTAINER}" >/dev/null
+      ;;
+    restart)
+      docker restart "${GOST_CONTAINER}" >/dev/null
+      ;;
+    *)
+      echo "ERROR: unsupported GOST_RELOAD_MODE='${GOST_RELOAD_MODE}', use sighup|restart" >&2
+      return 1
+      ;;
+  esac
+}

@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib.sh
 source "${SCRIPT_DIR}/lib.sh"
+MODE="$(read_proxy_mode)"
 
 cat > "${ROOT_DIR}/credentials.txt" <<EOF
 GOST SOCKS5+TLS
@@ -15,6 +16,16 @@ Password: ${GOST_PASSWORD}
 
 URI (sing-box / GOST / Surge):
 socks5+tls://${GOST_USER}:${GOST_PASSWORD}@${SERVER_IP}:${GOST_PORT}?notls=true
+
+Mode: ${MODE}
+Switch mode:
+  ./scripts/chain-on.sh
+  ./scripts/chain-off.sh
+  ./scripts/chain-status.sh
+
+Chain hop:
+  ${HOP_SERVER_IP:-<unset>}:${HOP_GOST_PORT}
+  ${HOP_GOST_USER:-<unset>}:${HOP_GOST_PASSWORD:-<unset>}
 
 TLS: Let's Encrypt IP certificate (short-lived ~6 days, auto-renew via cron)
 Renew log: ${RENEW_LOG}

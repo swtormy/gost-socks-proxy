@@ -25,6 +25,11 @@ nano .env
 | `GOST_PASSWORD` | нет | Пароль; пусто = сгенерируется при установке |
 | `SERVER_IP` | нет | IP VPS; пусто = определится автоматически |
 | `GOST_PORT` | нет | Порт прокси (по умолчанию `1443`) |
+| `CHAIN_MODE_FILE` | нет | Файл состояния режима (`direct`/`chain`), по умолчанию `state/mode` |
+| `HOP_SERVER_IP` | для chain | IP hop VPS (например, `5.8.34.74`) |
+| `HOP_GOST_PORT` | для chain | Порт hop GOST (по умолчанию `1443`) |
+| `HOP_GOST_USER` | для chain | Логин hop-прокси |
+| `HOP_GOST_PASSWORD` | для chain | Пароль hop-прокси |
 
 ### 3. Установить одной командой
 
@@ -79,7 +84,8 @@ Telegram напрямую к TLS-порту не подключается — н
 
 ```bash
 sudo ./scripts/test-proxy.sh
-# OK: proxy works, exit IP = YOUR_IP
+# OK: direct exit IP = 93.77.185.169
+# OK: chain  exit IP = 5.8.34.74
 ```
 
 ---
@@ -151,6 +157,15 @@ gost -L socks5://:1080 \
 # Перезапуск прокси
 sudo ./start-gost.sh
 
+# Включить цепочку через hop (93.77 -> 5.8)
+sudo ./scripts/chain-on.sh
+
+# Выключить цепочку (прямой выход через 93.77)
+sudo ./scripts/chain-off.sh
+
+# Показать текущий режим и фактический exit IP
+sudo ./scripts/chain-status.sh
+
 # Ручное продление сертификата
 sudo ./scripts/renew-certs.sh
 
@@ -162,6 +177,17 @@ openssl x509 -in certs/fullchain.pem -noout -dates
 
 # Удалить контейнер и cron (cert-файлы останутся)
 sudo ./uninstall.sh
+```
+
+### Быстрая ручная проверка режима
+
+```bash
+# Проверить текущий внешний IP через локальный self-test
+sudo ./scripts/chain-status.sh
+
+# Примеры внешней проверки с клиента:
+# https://ifconfig.me
+# https://2ip.ru
 ```
 
 ---

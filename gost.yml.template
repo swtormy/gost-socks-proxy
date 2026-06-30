@@ -3,6 +3,7 @@ services:
     addr: ":${GOST_PORT}"
     handler:
       type: socks5
+${GOST_HANDLER_CHAIN_BLOCK}
       auth:
         username: ${GOST_USER}
         password: ${GOST_PASSWORD}
@@ -17,3 +18,4 @@ services:
         options:
           minVersion: VersionTLS12
           maxVersion: VersionTLS13
+${GOST_CHAINS_BLOCK}
